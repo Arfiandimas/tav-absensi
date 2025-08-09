@@ -153,36 +153,38 @@
     @section('script')
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
-            $('#departemen_id').on('change', function () {
-                const departemenId = $(this).val();
+            $( document ).ready(function() {
+                $('#departemen_id').on('change', function () {
+                    const departemenId = $(this).val();
 
-                if (!departemenId) {
-                    // Jika kosong, reload semua user dari data awal (optional: bisa pakai ajax juga kalau mau)
-                    $('#user_id').html(`@foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
-                    @endforeach`);
-                    return;
-                }
-
-                $('#user_id').html('<option>Loading...</option>').prop('disabled', true);
-
-                $.ajax({
-                    url: '{{ route("users.byDepartemen") }}',
-                    type: 'GET',
-                    data: {
-                        departemen_id: departemenId
-                    },
-                    success: function (response) {
-                        let options = '<option value="">Semua User</option>';
-                        response.forEach(user => {
-                            options += `<option value="${user.id}">${user.first_name} ${user.last_name}</option>`;
-                        });
-
-                        $('#user_id').html(options).prop('disabled', false);
-                    },
-                    error: function () {
-                        $('#user_id').html('<option>Error memuat user</option>').prop('disabled', true);
+                    if (!departemenId) {
+                        // Jika kosong, reload semua user dari data awal (optional: bisa pakai ajax juga kalau mau)
+                        $('#user_id').html(`@foreach ($users as $user)
+                            <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
+                        @endforeach`);
+                        return;
                     }
+
+                    $('#user_id').html('<option>Loading...</option>').prop('disabled', true);
+
+                    $.ajax({
+                        url: '{{ route("users.byDepartemen") }}',
+                        type: 'GET',
+                        data: {
+                            departemen_id: departemenId
+                        },
+                        success: function (response) {
+                            let options = '<option value="">Semua User</option>';
+                            response.forEach(user => {
+                                options += `<option value="${user.id}">${user.first_name} ${user.last_name}</option>`;
+                            });
+
+                            $('#user_id').html(options).prop('disabled', false);
+                        },
+                        error: function () {
+                            $('#user_id').html('<option>Error memuat user</option>').prop('disabled', true);
+                        }
+                    });
                 });
             });
         </script>

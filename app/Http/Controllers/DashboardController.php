@@ -14,6 +14,11 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $departements = Departemen::get();
+        $users = User::select('id', 'first_name', 'last_name')->when($request->departemen_id, function ($query, $departemen_id){
+                $query->where('departemen_id', $departemen_id);
+            })->get();
+            
         if (session('is_logged_in')) {
             $start= $request->start_date;
             $end = $request->end_date;
@@ -85,14 +90,10 @@ class DashboardController extends Controller
                 ->orderBy('clock_in.tanggal', 'asc')
                 ->paginate(10);
 
-            $departements = Departemen::get();
-            $users = User::select('id', 'first_name', 'last_name')->when($request->departemen_id, function ($query, $departemen_id){
-                    $query->where('departemen_id', $departemen_id);
-                })->get();
             return view('dashboard', compact('results', 'start', 'end', 'departements', 'users'));
         }
 
-        return view('dashboard');
+        return view('dashboard', compact('departements', 'users'));
     }
 
     public function getByDepartemen(Request $request)
