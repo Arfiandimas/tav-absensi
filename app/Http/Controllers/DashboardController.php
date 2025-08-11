@@ -88,7 +88,8 @@ class DashboardController extends Controller
                 )
                 ->orderBy('users.id', 'asc')
                 ->orderBy('clock_in.tanggal', 'asc')
-                ->paginate(10);
+                ->paginate(10)
+                ->appends($request->all());;
 
             return view('dashboard', compact('results', 'start', 'end', 'departements', 'users'));
         }
@@ -112,11 +113,10 @@ class DashboardController extends Controller
         return response()->json($users);
     }
 
-    public function exportExcel(Request $request) {
-        $start = $request->start_date ?: Carbon::now()->startOfMonth()->toDateString();
-        $end = $request->end_date ?: Carbon::now()->endOfMonth()->toDateString();
+    public function exportExcel(Request $request) { 
+        $start = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
+        $end = $request->end_date ?? Carbon::now()->endOfMonth()->toDateString();
         $user_id = $request->user_id;
-        $user = User::where('id', $user_id)->first();
 
         return Excel::download(new AbsensiExport($start, $end, $user_id), 'absensi'.$start.' sampai '.$end.'.xlsx');
     }
