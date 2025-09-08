@@ -22,63 +22,89 @@
             @if (session('is_logged_in'))
                 <div class="container mx-auto p-4">
                     
-                    <form method="GET" action="{{ url()->current() }}" class="mb-6 flex flex-wrap gap-4 items-end">
-                        {{-- Filter Departemen --}}
-                        <div>
-                            <label for="departemen_id" class="block text-sm font-medium text-gray-700">Departemen</label>
-                            <select name="departemen_id" id="departemen_id" class="mt-1 border rounded px-3 py-2 w-48">
-                                <option value="">Semua Departemen</option>
-                                @foreach ($departements as $departemen)
-                                    <option value="{{ $departemen->id }}" {{ request('departemen_id') == $departemen->id ? 'selected' : '' }}>
-                                        {{ $departemen->nama }}
-                                    </option>
-                                @endforeach
-                            </select>
+                    <form method="GET" action="{{ url()->current() }}" 
+                        class="mb-6 bg-white shadow rounded-2xl p-4 md:p-6">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            {{-- Filter Office --}}
+                            <div>
+                                <label for="office_id" class="block text-sm font-medium text-gray-700 mb-1">Office</label>
+                                <select name="office_id" id="office_id"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                                    <option value="">Semua Office</option>
+                                    @foreach ($offices as $office)
+                                        <option value="{{ $office->id }}" {{ request('office_id') == $office->id ? 'selected' : '' }}>
+                                            {{ $office->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Filter Departemen --}}
+                            <div>
+                                <label for="departemen_id" class="block text-sm font-medium text-gray-700 mb-1">Departemen</label>
+                                <select name="departemen_id" id="departemen_id"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                                    <option value="">Semua Departemen</option>
+                                    @foreach ($departements as $departemen)
+                                        <option value="{{ $departemen->id }}" {{ request('departemen_id') == $departemen->id ? 'selected' : '' }}>
+                                            {{ $departemen->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Filter User --}}
+                            <div>
+                                <label for="user_id" class="block text-sm font-medium text-gray-700 mb-1">User</label>
+                                <select name="user_id" id="user_id"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                                    <option value="">Semua User</option>
+                                    @foreach ($users as $user)
+                                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->first_name }} {{ $user->last_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Filter Tanggal Mulai --}}
+                            <div>
+                                <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                                <input type="date" name="start_date" id="start_date"
+                                    value="{{ request('start_date', $start) }}"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            </div>
+
+                            {{-- Filter Tanggal Selesai --}}
+                            <div>
+                                <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                                <input type="date" name="end_date" id="end_date"
+                                    value="{{ request('end_date', $end) }}"
+                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            </div>
                         </div>
 
-                        {{-- Filter User --}}
-                        <div>
-                            <label for="user_id" class="block text-sm font-medium text-gray-700">User</label>
-                            <select name="user_id" id="user_id" class="mt-1 border rounded px-3 py-2 w-60">
-                                <option value="">Semua User</option>
-                                @foreach ($users as $user)
-                                    <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                        {{ $user->first_name }} {{ $user->last_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                        {{-- Tombol Aksi --}}
+                        <div class="flex flex-wrap items-center justify-between mt-6">
+                            <div class="flex gap-3">
+                                <button type="submit"
+                                    class="px-5 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition">
+                                    Filter
+                                </button>
 
-                        {{-- Filter Tanggal --}}
-                        <div>
-                            <label for="start_date" class="block text-sm font-medium text-gray-700">Dari Tanggal</label>
-                            <input type="date" name="start_date" id="start_date"
-                                value="{{ request('start_date', $start) }}"
-                                class="mt-1 border rounded px-3 py-2 w-30">
-                        </div>
-                        <div>
-                            <label for="end_date" class="block text-sm font-medium text-gray-700">Sampai Tanggal</label>
-                            <input type="date" name="end_date" id="end_date"
-                                value="{{ request('end_date', $end) }}"
-                                class="mt-1 border rounded px-3 py-2 w-30">
-                        </div>
+                                <a href="{{ url()->current() }}"
+                                    class="px-5 py-2 bg-gray-200 text-gray-800 rounded-xl shadow hover:bg-gray-300 transition">
+                                    Reset
+                                </a>
+                            </div>
 
-                        {{-- Tombol Submit --}}
-                        <div class="flex gap-2 mt-6">
-                            <button type="submit"
-                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                                Filter
-                            </button>
-
-                            <a href="{{ url()->current() }}"
-                                class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
-                                Reset Filter
-                            </a>
-
-                            <a href="{{ route('export.excel') }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}"
-                            class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                                Export Excel
-                            </a>
+                            <div>
+                                <a href="javascript:void(0)" id="btn-export"
+                                    class="px-5 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700 transition">
+                                    Export
+                                </a>
+                            </div>
                         </div>
                     </form>
 
@@ -154,24 +180,25 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script>
             $( document ).ready(function() {
-                $('#departemen_id').on('change', function () {
-                    const departemenId = $(this).val();
+                $('#departemen_id, #office_id').on('change', function () {
+                    const departemenId = $('#departemen_id').val();
+                    const officeId = $('#office_id').val();
 
-                    if (!departemenId) {
-                        // Jika kosong, reload semua user dari data awal (optional: bisa pakai ajax juga kalau mau)
+                    if (!departemenId && !officeId) {
                         $('#user_id').html(`@foreach ($users as $user)
                             <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
                         @endforeach`);
                         return;
                     }
 
-                    $('#user_id').html('<option>Loading...</option>').prop('disabled', true);
+                    $('#user_id').html('<option value="">Loading...</option>').prop('disabled', true);
 
                     $.ajax({
-                        url: '{{ route("users.byDepartemen") }}',
+                        url: '{{ route("users.byOfficeAndDepartemen") }}',
                         type: 'GET',
                         data: {
-                            departemen_id: departemenId
+                            departemen_id: departemenId,
+                            office_id: officeId
                         },
                         success: function (response) {
                             let options = '<option value="">Semua User</option>';
@@ -182,9 +209,29 @@
                             $('#user_id').html(options).prop('disabled', false);
                         },
                         error: function () {
-                            $('#user_id').html('<option>Error memuat user</option>').prop('disabled', true);
+                            $('#user_id').html('<option value="">Error memuat user</option>').prop('disabled', true);
                         }
                     });
+                });
+
+                $('#btn-export').on('click', function () {
+                    const officeId = $('#office_id').val();
+                    const departemenId = $('#departemen_id').val();
+                    const userId = $('#user_id').val();
+                    const startDate = $('#start_date').val();
+                    const endDate = $('#end_date').val();
+
+                    // Bangun query string
+                    let params = $.param({
+                        office_id: officeId,
+                        departemen_id: departemenId,
+                        user_id: userId,
+                        start_date: startDate,
+                        end_date: endDate
+                    });
+
+                    // Redirect ke URL export dengan query string
+                    window.location.href = '{{ route("export.excel") }}' + '?' + params;
                 });
             });
         </script>

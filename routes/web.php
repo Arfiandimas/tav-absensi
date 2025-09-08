@@ -5,7 +5,7 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-Route::get('/users/by-departemen', [DashboardController::class, 'getByDepartemen'])->name('users.byDepartemen');
+Route::get('/users/by-office-and-departemen', [DashboardController::class, 'getByOfficeAndDepartemen'])->name('users.byOfficeAndDepartemen');
 Route::get('/export-excel', [DashboardController::class, 'exportExcel'])->name('export.excel');
 
 Route::get('/login', [AuthController::class, 'login'])->name('login');

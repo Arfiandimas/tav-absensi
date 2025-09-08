@@ -9,16 +9,23 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiExport;
+use App\Models\Office;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
         $departements = Departemen::get();
-        $users = User::select('id', 'first_name', 'last_name')->when($request->departemen_id, function ($query, $departemen_id){
+        $offices = Office::get();
+        $users = User::select('id', 'first_name', 'last_name')
+            ->when($request->departemen_id, function ($query, $departemen_id){
                 $query->where('departemen_id', $departemen_id);
-            })->get();
-            
+            })
+            ->when($request->office_id, function ($query, $office_id){
+                $query->where('office_id', $office_id);
+            })
+            ->get();
+
         if (session('is_logged_in')) {
             $start= $request->start_date;
             $end = $request->end_date;
@@ -73,6 +80,12 @@ class DashboardController extends Controller
                 ->when($request->user_id, function ($query) use ($request) {
                     $query->where('users.id', $request->user_id);
                 })
+                ->when($request->departemen_id, function ($query, $departemen_id){
+                    $query->where('users.departemen_id', $departemen_id);
+                })
+                ->when($request->office_id, function ($query, $office_id){
+                    $query->where('users.office_id', $office_id);
+                })
                 ->select(
                     'users.id as user_id',
                     DB::raw("CONCAT(users.first_name, ' ', users.last_name) as full_name"),
@@ -91,19 +104,19 @@ class DashboardController extends Controller
                 ->paginate(10)
                 ->appends($request->all());;
 
-            return view('dashboard', compact('results', 'start', 'end', 'departements', 'users'));
+            return view('dashboard', compact('results', 'start', 'end', 'departements', 'users', 'offices'));
         }
 
-        return view('dashboard', compact('departements', 'users'));
+        return view('dashboard', compact('departements', 'offices', 'users'));
     }
 
-    public function getByDepartemen(Request $request)
+    public function getOffice(Request $request)
     {
-        $departemenId = $request->input('departemen_id');
+        $departemenId = $request->input('office_id');
 
         $users = User::where(function ($q) use ($departemenId) {
                 if ($departemenId) {
-                    $q->where('departemen_id', $departemenId);
+                    $q->where('office_id', $departemenId);
                 }
             })
             ->select('id', 'first_name', 'last_name')
@@ -113,11 +126,26 @@ class DashboardController extends Controller
         return response()->json($users);
     }
 
-    public function exportExcel(Request $request) { 
+    public function getByOfficeAndDepartemen(Request $request)
+    {
+        $departemenId = $request->input('departemen_id');
+        $officeId = $request->input('office_id');
+
+        $users = User::select('id', 'first_name', 'last_name')
+            ->when($departemenId, fn($q) => $q->where('departemen_id', $departemenId))
+            ->when($officeId, fn($q) => $q->where('office_id', $officeId))
+            ->orderBy('first_name')
+            ->get();
+
+        return response()->json($users);
+    }
+
+    public function exportExcel(Request $request) {
         $start = $request->start_date ?? Carbon::now()->startOfMonth()->toDateString();
         $end = $request->end_date ?? Carbon::now()->endOfMonth()->toDateString();
         $user_id = $request->user_id;
-
-        return Excel::download(new AbsensiExport($start, $end, $user_id), 'absensi'.$start.' sampai '.$end.'.xlsx');
+        $office_id = $request->office_id;
+        $departemen_id = $request->departemen_id;
+        return Excel::download(new AbsensiExport($start, $end, $user_id, $office_id, $departemen_id), 'absensi'.$start.' sampai '.$end.'.xlsx');
     }
 }

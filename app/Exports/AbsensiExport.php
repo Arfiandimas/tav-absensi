@@ -8,13 +8,15 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class AbsensiExport implements FromCollection, WithHeadings
 {
-    protected $start, $end, $user_id;
+    protected $start, $end, $user_id, $office_id, $departemen_id;
 
-    public function __construct($start, $end, $user_id = null)
+    public function __construct($start, $end, $user_id = null, $office_id = null, $departemen_id = null)
     {
         $this->start = $start;
         $this->end = $end;
         $this->user_id = $user_id;
+        $this->office_id = $office_id;
+        $this->departemen_id = $departemen_id;
     }
 
     public function collection()
@@ -28,6 +30,9 @@ class AbsensiExport implements FromCollection, WithHeadings
             $query->whereBetween(DB::raw('DATE(b1.waktu)'), [$start, $end]);
         };
         $user_id = $this->user_id;
+        $departemen_id = $this->departemen_id;
+        $office_id = $this->office_id;
+
         $clockIns = DB::table('absensi as a1')
                 ->select('a1.user_id', DB::raw('DATE(a1.waktu) as tanggal'), 'a1.waktu as clock_in_time', 'a1.mlat as clock_in_mlat', 'a1.mlong as clock_in_mlong', 'a1.foto as clock_in_foto')
                 ->where('a1.type', 'Clock In')
@@ -65,6 +70,12 @@ class AbsensiExport implements FromCollection, WithHeadings
                 ->leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
                 ->when($user_id, function ($query) use ($user_id) {
                     $query->where('users.id', $user_id);
+                })
+                ->when($departemen_id, function ($query, $departemen_id){
+                    $query->where('users.departemen_id', $departemen_id);
+                })
+                ->when($office_id, function ($query, $office_id){
+                    $query->where('users.office_id', $office_id);
                 })
                 ->select(
                     DB::raw("CONCAT(users.first_name, ' ', users.last_name) as full_name"),
