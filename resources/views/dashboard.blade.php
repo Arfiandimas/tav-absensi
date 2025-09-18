@@ -117,10 +117,10 @@
                                     <th class="px-4 py-2 border">Tanggal</th>
                                     <th class="px-4 py-2 border">Clock In</th>
                                     <th class="px-4 py-2 border">Lokasi In</th>
-                                    <th class="px-4 py-2 border">Foto In</th>
+                                    <th class="px-4 py-2 border">Clock In Siang</th>
+                                    <th class="px-4 py-2 border">Lokasi In Siang</th>
                                     <th class="px-4 py-2 border">Clock Out</th>
                                     <th class="px-4 py-2 border">Lokasi Out</th>
-                                    <th class="px-4 py-2 border">Foto Out</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -139,9 +139,12 @@
                                                 -
                                             @endif
                                         </td>
+                                        <td class="px-4 py-2 border">{{ $item->clock_in_siang_time ? date('H:i', strtotime($item->clock_in_siang_time)) : '-' }}</td>
                                         <td class="px-4 py-2 border">
-                                            @if($item->clock_in_foto)
-                                                <img src="{{ asset('storage/foto/' . $item->clock_in_foto) }}" alt="Clock In Foto" class="h-12 w-12 object-cover rounded">
+                                            @if($item->clock_in_siang_mlat && $item->clock_in_siang_mlong)
+                                                <a href="https://maps.google.com/?q={{ $item->clock_in_siang_mlat }},{{ $item->clock_in_siang_mlong }}" target="_blank" class="text-blue-600 underline">
+                                                    Lihat Lokasi
+                                                </a>
                                             @else
                                                 -
                                             @endif
@@ -152,13 +155,6 @@
                                                 <a href="https://maps.google.com/?q={{ $item->clock_out_mlat }},{{ $item->clock_out_mlong }}" target="_blank" class="text-blue-600 underline">
                                                     Lihat Lokasi
                                                 </a>
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-                                        <td class="px-4 py-2 border">
-                                            @if($item->clock_out_foto)
-                                                <img src="{{ asset('storage/foto/' . $item->clock_out_foto) }}" alt="Clock Out Foto" class="h-12 w-12 object-cover rounded">
                                             @else
                                                 -
                                             @endif

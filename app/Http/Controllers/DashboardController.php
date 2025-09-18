@@ -36,11 +36,11 @@ class DashboardController extends Controller
             }
 
             $dateConditionClockIn = function ($query) use ($start, $end) {
-                $query->whereBetween(DB::raw('DATE(a1.waktu)'), [$start, $end]);
+                $query->whereBetween(DB::raw('DATE(waktu)'), [$start, $end]);
             };
 
             $dateConditionClockOut = function ($query) use ($start, $end) {
-                $query->whereBetween(DB::raw('DATE(b1.waktu)'), [$start, $end]);
+                $query->whereBetween(DB::raw('DATE(waktu)'), [$start, $end]);
             };
 
             $clockIns = DB::table('absensi as a1')
@@ -53,6 +53,19 @@ class DashboardController extends Controller
                 ->whereRaw('a1.waktu = (
                     SELECT MIN(a2.waktu) FROM absensi a2
                     WHERE a2.user_id = a1.user_id AND a2.type = "Clock In" AND DATE(a2.waktu) = DATE(a1.waktu)
+                )')
+                ->orderBy('tanggal', 'asc');
+
+            $clockInsSiang = DB::table('absensi as a2')
+                ->select('a2.user_id', DB::raw('DATE(a2.waktu) as tanggal'), 'a2.waktu as clock_in_siang_time', 'a2.mlat as clock_in_siang_mlat', 'a2.mlong as clock_in_siang_mlong', 'a2.foto as clock_in_siang_foto')
+                ->where('a2.type', 'Clock In')
+                ->when($request->user_id, function ($query) use ($request) {
+                    $query->where('a2.user_id', $request->user_id);
+                })
+                ->where($dateConditionClockIn)
+                ->whereRaw('a2.waktu = (
+                    SELECT MIN(a3.waktu) FROM absensi a3
+                    WHERE a3.user_id = a2.user_id AND a3.type = "Clock In" AND DATE(a3.waktu) = DATE(a2.waktu) AND TIME(a3.waktu) >= "12:00:00" AND TIME(a3.waktu) <= "15:00:00"
                 )')
                 ->orderBy('tanggal', 'asc');
 
@@ -72,6 +85,10 @@ class DashboardController extends Controller
             $results = DB::table('users')
                 ->leftJoinSub($clockIns, 'clock_in', function ($join) {
                     $join->on('users.id', '=', 'clock_in.user_id');
+                })
+                ->leftJoinSub($clockInsSiang, 'clock_in_siang', function ($join) {
+                    $join->on('users.id', '=', 'clock_in_siang.user_id')
+                        ->on('clock_in.tanggal', '=', 'clock_in_siang.tanggal');
                 })
                 ->leftJoinSub($clockOuts, 'clock_out', function ($join) {
                     $join->on('users.id', '=', 'clock_out.user_id')
@@ -94,6 +111,10 @@ class DashboardController extends Controller
                     'clock_in.clock_in_mlat',
                     'clock_in.clock_in_mlong',
                     'clock_in.clock_in_foto',
+                    'clock_in_siang.clock_in_siang_time',
+                    'clock_in_siang.clock_in_siang_mlat',
+                    'clock_in_siang.clock_in_siang_mlong',
+                    'clock_in_siang.clock_in_siang_foto',
                     'clock_out.clock_out_time',
                     'clock_out.clock_out_foto',
                     'clock_out.clock_out_mlat',
