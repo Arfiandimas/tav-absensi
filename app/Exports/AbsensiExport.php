@@ -3,12 +3,15 @@
 namespace App\Exports;
 
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class AbsensiExport implements FromCollection, WithHeadings
+class AbsensiExport implements FromArray, WithHeadings, WithEvents
 {
     protected $start, $end, $user_id, $office_id, $departemen_id;
+    protected $dates;
 
     public function __construct($start, $end, $user_id = null, $office_id = null, $departemen_id = null)
     {
@@ -17,99 +20,125 @@ class AbsensiExport implements FromCollection, WithHeadings
         $this->user_id = $user_id;
         $this->office_id = $office_id;
         $this->departemen_id = $departemen_id;
+
+        // generate list tanggal
+        $this->dates = collect();
+        $period = new \DatePeriod(
+            new \DateTime($this->start),
+            new \DateInterval('P1D'),
+            (new \DateTime($this->end))->modify('+1 day')
+        );
+
+        foreach ($period as $date) {
+            $this->dates->push($date->format('Y-m-d'));
+        }
     }
 
-    public function collection()
+    public function array(): array
     {
-        $start = $this->start;
-        $end = $this->end;
-        $dateConditionClockIn = function ($query) use ($start, $end) {
-            $query->whereBetween(DB::raw('DATE(waktu)'), [$start, $end]);
-        };
-        $dateConditionClockOut = function ($query) use ($start, $end) {
-            $query->whereBetween(DB::raw('DATE(waktu)'), [$start, $end]);
-        };
-        $user_id = $this->user_id;
-        $departemen_id = $this->departemen_id;
-        $office_id = $this->office_id;
+        $users = DB::table('users')
+            ->leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
+            ->select('users.id','users.first_name','users.last_name','departemen.nama as departemen')
+            ->when($this->user_id, fn($q)=>$q->where('users.id',$this->user_id))
+            ->when($this->departemen_id, fn($q)=>$q->where('users.departemen_id',$this->departemen_id))
+            ->when($this->office_id, fn($q)=>$q->where('users.office_id',$this->office_id))
+            ->get();
 
-        $clockIns = DB::table('absensi as a1')
-                ->select('a1.user_id', DB::raw('DATE(a1.waktu) as tanggal'), 'a1.waktu as clock_in_time', 'a1.mlat as clock_in_mlat', 'a1.mlong as clock_in_mlong', 'a1.foto as clock_in_foto')
-                ->where('a1.type', 'Clock In')
-                ->when($user_id, function ($query) use ($user_id) {
-                    $query->where('a1.user_id', $user_id);
-                })
-                ->where($dateConditionClockIn)
-                ->whereRaw('a1.waktu = (
-                    SELECT MIN(a2.waktu) FROM absensi a2
-                    WHERE a2.user_id = a1.user_id AND a2.type = "Clock In" AND DATE(a2.waktu) = DATE(a1.waktu)
-                )')
-                ->orderBy('tanggal', 'asc');
+        $rows = [];
 
-        $clockInsSiang = DB::table('absensi as a2')
-                ->select('a2.user_id', DB::raw('DATE(a2.waktu) as tanggal'), 'a2.waktu as clock_in_siang_time', 'a2.mlat as clock_in_siang_mlat', 'a2.mlong as clock_in_siang_mlong', 'a2.foto as clock_in_siang_foto')
-                ->where('a2.type', 'Clock In')
-                ->when($user_id, function ($query) use ($user_id) {
-                    $query->where('a2.user_id', $user_id);
-                })
-                ->where($dateConditionClockIn)
-                ->whereRaw('a2.waktu = (
-                    SELECT MIN(a3.waktu) FROM absensi a3
-                    WHERE a3.user_id = a2.user_id AND a3.type = "Clock In" AND DATE(a3.waktu) = DATE(a2.waktu) AND TIME(a3.waktu) >= "12:00:00" AND TIME(a3.waktu) <= "15:00:00"
-                )')
-                ->orderBy('tanggal', 'asc');
+        foreach ($users as $user) {
+            $row = [
+                $user->first_name . ' ' . $user->last_name,
+                $user->departemen,
+            ];
 
-        $clockOuts = DB::table('absensi as b1')
-                ->select('b1.user_id', DB::raw('DATE(b1.waktu) as tanggal'), 'b1.waktu as clock_out_time', 'b1.foto as clock_out_foto', 'b1.mlat as clock_out_mlat', 'b1.mlong as clock_out_mlong')
-                ->where('b1.type', 'Clock Out')
-                ->when($user_id, function ($query) use ($user_id) {
-                    $query->where('b1.user_id', $user_id);
-                })
-                ->where($dateConditionClockOut)
-                ->whereRaw('b1.waktu = (
-                    SELECT MIN(b2.waktu) FROM absensi b2
-                    WHERE b2.user_id = b1.user_id AND b2.type = "Clock Out" AND DATE(b2.waktu) = DATE(b1.waktu)
-                )')
-                ->orderBy('tanggal', 'asc');
+            foreach ($this->dates as $tanggal) {
+                $data = DB::table('absensi')
+                    ->select(
+                        DB::raw("MIN(CASE WHEN type='Clock In' THEN TIME(waktu) END) as clock_in"),
+                        // DB::raw("MIN(CASE WHEN type='Clock In' AND TIME(waktu) BETWEEN '12:00:00' AND '15:00:00' THEN TIME(waktu) END) as clock_in_siang"),
+                        DB::raw("MIN(CASE WHEN type='Clock Out' THEN TIME(waktu) END) as clock_out")
+                    )
+                    ->where('user_id',$user->id)
+                    ->whereDate('waktu',$tanggal)
+                    ->first();
 
-        $results = DB::table('users')
-                ->leftJoinSub($clockIns, 'clock_in', function ($join) {
-                    $join->on('users.id', '=', 'clock_in.user_id');
-                })
-                ->leftJoinSub($clockInsSiang, 'clock_in_siang', function ($join) {
-                    $join->on('users.id', '=', 'clock_in_siang.user_id')
-                        ->on('clock_in.tanggal', '=', 'clock_in_siang.tanggal');
-                })
-                ->leftJoinSub($clockOuts, 'clock_out', function ($join) {
-                    $join->on('users.id', '=', 'clock_out.user_id')
-                        ->on('clock_in.tanggal', '=', 'clock_out.tanggal');
-                })
-                ->leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
-                ->when($user_id, function ($query) use ($user_id) {
-                    $query->where('users.id', $user_id);
-                })
-                ->when($departemen_id, function ($query, $departemen_id){
-                    $query->where('users.departemen_id', $departemen_id);
-                })
-                ->when($office_id, function ($query, $office_id){
-                    $query->where('users.office_id', $office_id);
-                })
-                ->select(
-                    DB::raw("CONCAT(users.first_name, ' ', users.last_name) as full_name"),
-                    'departemen.nama',
-                    'clock_in.tanggal',
-                    DB::raw("DATE_FORMAT(clock_in.clock_in_time, '%H:%i') as clock_in_time"),
-                    DB::raw("DATE_FORMAT(clock_in_siang.clock_in_siang_time, '%H:%i') as clock_in_siang_time"),
-                    DB::raw("DATE_FORMAT(clock_out.clock_out_time, '%H:%i') as clock_out_time")
-                )
-                ->orderBy('users.id', 'asc')
-                ->orderBy('clock_in.tanggal', 'asc')
-                ->get();
-        return $results;
+                $row[] = $data->clock_in ? date('H:i', strtotime($data->clock_in)) : '-';
+                // $row[] = $data->clock_in_siang ? date('H:i', strtotime($data->clock_in_siang)) : '-';
+                $row[] = $data->clock_out ? date('H:i', strtotime($data->clock_out)) : '-';
+            }
+
+            $rows[] = $row;
+        }
+
+        return $rows;
     }
 
     public function headings(): array
     {
-        return ['Nama', 'Departemen', 'Tanggal', 'Clock In', 'Clock In Siang', 'Clock Out'];
+        // baris periode
+        $periodeRow = ['Periode ' . \Carbon\Carbon::parse($this->start)->translatedFormat('d F Y') 
+            . ' - ' . \Carbon\Carbon::parse($this->end)->translatedFormat('d F Y')];
+
+        // baris pertama (tanggal aja)
+        $row1 = ['Nama', 'Departemen'];
+        foreach ($this->dates as $tanggal) {
+            $day = date('j', strtotime($tanggal));
+            $row1[] = $day;
+            // $row1[] = '';
+            $row1[] = '';
+        }
+
+        // baris kedua (sub kolom)
+        $row2 = ['', ''];
+        foreach ($this->dates as $tanggal) {
+            $row2[] = 'Clock In';
+            // $row2[] = 'Clock In Siang';
+            $row2[] = 'Clock Out';
+        }
+
+        return [$periodeRow, $row1, $row2];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+
+                $lastCol = $sheet->getHighestColumn();
+
+                // merge cell periode di baris 1
+                $sheet->mergeCells("A1:{$lastCol}1");
+                $sheet->getStyle("A1")->getFont()->setBold(true)->setSize(14);
+                $sheet->getStyle("A1")->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT) // rata kiri
+                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+
+                // merge cell tanggal di baris kedua
+                $colIndex = 3; // kolom mulai dari C
+                foreach ($this->dates as $tanggal) {
+                    $colStart = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
+                    $colEnd   = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex+1);
+                    // kalau aktifkan clock_in_siang, ubah jadi +2
+                    $sheet->mergeCells("{$colStart}2:{$colEnd}2");
+                    $colIndex += 2; // kalau aktifkan clock_in_siang ubah jadi += 3
+                }
+
+                // bold heading
+                $sheet->getStyle('A2:'.$sheet->getHighestColumn().'3')->getFont()->setBold(true);
+
+                // auto width
+                foreach(range('A',$sheet->getHighestColumn()) as $col) {
+                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                }
+
+                // center alignment semua cell
+                $sheet->getStyle('A2:'.$sheet->getHighestColumn().$sheet->getHighestRow())
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
+                    ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+            },
+        ];
     }
 }
