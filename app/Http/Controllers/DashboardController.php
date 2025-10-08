@@ -10,23 +10,23 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiExport;
 use App\Models\Office;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $departements = Departemen::get();
-        $offices = Office::get();
-        $users = User::select('id', 'first_name', 'last_name')
-            ->when($request->departemen_id, function ($query, $departemen_id){
-                $query->where('departemen_id', $departemen_id);
-            })
-            ->when($request->office_id, function ($query, $office_id){
-                $query->where('office_id', $office_id);
-            })
-            ->get();
-
-        if (session('is_logged_in')) {
+        if (Auth::check()) {
+            $departements = Departemen::get();
+            $offices = Office::get();
+            $users = User::select('id', 'first_name', 'last_name')
+                ->when($request->departemen_id, function ($query, $departemen_id){
+                    $query->where('departemen_id', $departemen_id);
+                })
+                ->when($request->office_id, function ($query, $office_id){
+                    $query->where('office_id', $office_id);
+                })
+                ->get();
             $start= $request->start_date;
             $end = $request->end_date;
 
@@ -128,7 +128,7 @@ class DashboardController extends Controller
             return view('dashboard', compact('results', 'start', 'end', 'departements', 'users', 'offices'));
         }
 
-        return view('dashboard', compact('departements', 'offices', 'users'));
+        return view('dashboard');
     }
 
     public function getOffice(Request $request)

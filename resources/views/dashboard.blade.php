@@ -9,7 +9,7 @@
         <div class="mx-auto max-w-7xl space-y-10 sm:px-6 lg:px-8">
             
             {{-- Untuk tamu (belum login) --}}
-            @if (!session('is_logged_in'))
+            @if (!auth()->check())
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <p>
@@ -19,7 +19,7 @@
                 </div>
             @endif
 
-            @if (session('is_logged_in'))
+            @if (auth()->check())
                 <div class="container mx-auto p-4">
                     
                     <form method="GET" action="{{ url()->current() }}" 
@@ -172,64 +172,66 @@
         </div>
     </div>
 
-    @section('script')
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script>
-            $( document ).ready(function() {
-                $('#departemen_id, #office_id').on('change', function () {
-                    const departemenId = $('#departemen_id').val();
-                    const officeId = $('#office_id').val();
+    @if (auth()->check())
+        @section('script')
+            <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+            <script>
+                $( document ).ready(function() {
+                    $('#departemen_id, #office_id').on('change', function () {
+                        const departemenId = $('#departemen_id').val();
+                        const officeId = $('#office_id').val();
 
-                    if (!departemenId && !officeId) {
-                        $('#user_id').html(`@foreach ($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
-                        @endforeach`);
-                        return;
-                    }
-
-                    $('#user_id').html('<option value="">Loading...</option>').prop('disabled', true);
-
-                    $.ajax({
-                        url: '{{ route("users.byOfficeAndDepartemen") }}',
-                        type: 'GET',
-                        data: {
-                            departemen_id: departemenId,
-                            office_id: officeId
-                        },
-                        success: function (response) {
-                            let options = '<option value="">Semua User</option>';
-                            response.forEach(user => {
-                                options += `<option value="${user.id}">${user.first_name} ${user.last_name}</option>`;
-                            });
-
-                            $('#user_id').html(options).prop('disabled', false);
-                        },
-                        error: function () {
-                            $('#user_id').html('<option value="">Error memuat user</option>').prop('disabled', true);
+                        if (!departemenId && !officeId) {
+                            $('#user_id').html(`@foreach ($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
+                            @endforeach`);
+                            return;
                         }
+
+                        $('#user_id').html('<option value="">Loading...</option>').prop('disabled', true);
+
+                        $.ajax({
+                            url: '{{ route("users.byOfficeAndDepartemen") }}',
+                            type: 'GET',
+                            data: {
+                                departemen_id: departemenId,
+                                office_id: officeId
+                            },
+                            success: function (response) {
+                                let options = '<option value="">Semua User</option>';
+                                response.forEach(user => {
+                                    options += `<option value="${user.id}">${user.first_name} ${user.last_name}</option>`;
+                                });
+
+                                $('#user_id').html(options).prop('disabled', false);
+                            },
+                            error: function () {
+                                $('#user_id').html('<option value="">Error memuat user</option>').prop('disabled', true);
+                            }
+                        });
+                    });
+
+                    $('#btn-export').on('click', function () {
+                        const officeId = $('#office_id').val();
+                        const departemenId = $('#departemen_id').val();
+                        const userId = $('#user_id').val();
+                        const startDate = $('#start_date').val();
+                        const endDate = $('#end_date').val();
+
+                        // Bangun query string
+                        let params = $.param({
+                            office_id: officeId,
+                            departemen_id: departemenId,
+                            user_id: userId,
+                            start_date: startDate,
+                            end_date: endDate
+                        });
+
+                        // Redirect ke URL export dengan query string
+                        window.location.href = '{{ route("export.excel") }}' + '?' + params;
                     });
                 });
-
-                $('#btn-export').on('click', function () {
-                    const officeId = $('#office_id').val();
-                    const departemenId = $('#departemen_id').val();
-                    const userId = $('#user_id').val();
-                    const startDate = $('#start_date').val();
-                    const endDate = $('#end_date').val();
-
-                    // Bangun query string
-                    let params = $.param({
-                        office_id: officeId,
-                        departemen_id: departemenId,
-                        user_id: userId,
-                        start_date: startDate,
-                        end_date: endDate
-                    });
-
-                    // Redirect ke URL export dengan query string
-                    window.location.href = '{{ route("export.excel") }}' + '?' + params;
-                });
-            });
-        </script>
-    @endsection
+            </script>
+        @endsection
+    @endif
 </x-app-layout>

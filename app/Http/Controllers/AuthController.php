@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -13,29 +14,32 @@ class AuthController extends Controller
 
     public function postLogin(Request $request)
     {
-        try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-            ]);
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-            if (
-                $request->email === env('ADMIN_EMAIL') &&
-                $request->password === env('ADMIN_PASSWORD')
-            ) {
-                session(['is_logged_in' => true]);
-                return redirect('/');
-            }
+        $credentials = $request->only('email', 'password');
 
-            return redirect()->route('login')->with(['status'=> 'error', 'message'=> 'Email atau password salah.']);
-        } catch (\Throwable $th) {
-            abort(400);
+        // Gunakan guard admin
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+
+            return redirect()->intended('/'); // ke halaman utama
         }
+
+        return back()->with([
+            'status' => 'error',
+            'message' => 'Email atau password salah.',
+        ]);
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->flush();
-        return redirect('/');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('dashboard');
     }
 }
