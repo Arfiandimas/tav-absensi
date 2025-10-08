@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -38,10 +39,12 @@ class AbsensiExport implements FromArray, WithHeadings, WithEvents
     {
         $users = DB::table('users')
             ->leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
+            ->leftJoin('office', 'users.office_id', '=', 'office.id')
             ->select('users.id','users.first_name','users.last_name','departemen.nama as departemen')
             ->when($this->user_id, fn($q)=>$q->where('users.id',$this->user_id))
             ->when($this->departemen_id, fn($q)=>$q->where('users.departemen_id',$this->departemen_id))
             ->when($this->office_id, fn($q)=>$q->where('users.office_id',$this->office_id))
+            ->where('office.admin_id', Auth::Id())
             ->get();
 
         $rows = [];

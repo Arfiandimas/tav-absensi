@@ -17,8 +17,16 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         if (Auth::check()) {
-            $departements = Departemen::get();
-            $offices = Office::get();
+            $offices = Office::where('admin_id', Auth::Id())->get();
+
+            $departements = Departemen::when(Auth::Id() == 1, function ($query) {
+                $query->where('type', 'bursa_mobil');
+            })
+            ->when(Auth::Id() == 2, function ($query) {
+                $query->where('type', 'perumahan');
+            })
+            ->get();
+
             $users = User::select('id', 'first_name', 'last_name')
                 ->when($request->departemen_id, function ($query, $departemen_id){
                     $query->where('departemen_id', $departemen_id);
@@ -26,7 +34,11 @@ class DashboardController extends Controller
                 ->when($request->office_id, function ($query, $office_id){
                     $query->where('office_id', $office_id);
                 })
+                ->whereHas('office', function ($query) {
+                    $query->where('admin_id', Auth::Id());
+                })
                 ->get();
+
             $start= $request->start_date;
             $end = $request->end_date;
 
@@ -82,8 +94,8 @@ class DashboardController extends Controller
                 )')
                 ->orderBy('tanggal', 'asc');
                 
-            $results = DB::table('users')
-                ->leftJoinSub($clockIns, 'clock_in', function ($join) {
+            $results = User::
+                leftJoinSub($clockIns, 'clock_in', function ($join) {
                     $join->on('users.id', '=', 'clock_in.user_id');
                 })
                 ->leftJoinSub($clockInsSiang, 'clock_in_siang', function ($join) {
@@ -102,6 +114,9 @@ class DashboardController extends Controller
                 })
                 ->when($request->office_id, function ($query, $office_id){
                     $query->where('users.office_id', $office_id);
+                })
+                ->whereHas('office', function ($query) {
+                    $query->where('admin_id', Auth::Id());
                 })
                 ->select(
                     'users.id as user_id',
