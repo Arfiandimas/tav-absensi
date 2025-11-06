@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -72,8 +73,8 @@ class AbsensiExport_BC implements FromCollection, WithHeadings
                 )')
                 ->orderBy('tanggal', 'asc');
 
-        $results = DB::table('users')
-                ->leftJoinSub($clockIns, 'clock_in', function ($join) {
+        $results = User::
+                leftJoinSub($clockIns, 'clock_in', function ($join) {
                     $join->on('users.id', '=', 'clock_in.user_id');
                 })
                 ->leftJoinSub($clockInsSiang, 'clock_in_siang', function ($join) {
