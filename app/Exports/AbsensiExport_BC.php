@@ -75,35 +75,35 @@ class AbsensiExport_BC implements FromCollection, WithHeadings
 
         $results = User::
                 leftJoinSub($clockIns, 'clock_in', function ($join) {
-                    $join->on('users.id', '=', 'clock_in.user_id');
+                    $join->on('user.id', '=', 'clock_in.user_id');
                 })
                 ->leftJoinSub($clockInsSiang, 'clock_in_siang', function ($join) {
-                    $join->on('users.id', '=', 'clock_in_siang.user_id')
+                    $join->on('user.id', '=', 'clock_in_siang.user_id')
                         ->on('clock_in.tanggal', '=', 'clock_in_siang.tanggal');
                 })
                 ->leftJoinSub($clockOuts, 'clock_out', function ($join) {
-                    $join->on('users.id', '=', 'clock_out.user_id')
+                    $join->on('user.id', '=', 'clock_out.user_id')
                         ->on('clock_in.tanggal', '=', 'clock_out.tanggal');
                 })
-                ->leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
+                ->leftJoin('departemen', 'user.departemen_id', '=', 'departemen.id')
                 ->when($user_id, function ($query) use ($user_id) {
-                    $query->where('users.id', $user_id);
+                    $query->where('user.id', $user_id);
                 })
                 ->when($departemen_id, function ($query, $departemen_id){
-                    $query->where('users.departemen_id', $departemen_id);
+                    $query->where('user.departemen_id', $departemen_id);
                 })
                 ->when($office_id, function ($query, $office_id){
-                    $query->where('users.office_id', $office_id);
+                    $query->where('user.office_id', $office_id);
                 })
                 ->select(
-                    DB::raw("CONCAT(users.first_name, ' ', users.last_name) as full_name"),
+                    'nama_langkap as full_name',
                     'departemen.nama',
                     'clock_in.tanggal',
                     DB::raw("DATE_FORMAT(clock_in.clock_in_time, '%H:%i') as clock_in_time"),
                     DB::raw("DATE_FORMAT(clock_in_siang.clock_in_siang_time, '%H:%i') as clock_in_siang_time"),
                     DB::raw("DATE_FORMAT(clock_out.clock_out_time, '%H:%i') as clock_out_time")
                 )
-                ->orderBy('users.id', 'asc')
+                ->orderBy('user.id', 'asc')
                 ->orderBy('clock_in.tanggal', 'asc')
                 ->get();
         return $results;

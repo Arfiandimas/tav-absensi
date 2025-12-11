@@ -9,7 +9,7 @@
         <div class="mx-auto max-w-7xl space-y-10 sm:px-6 lg:px-8">
             
             {{-- Untuk tamu (belum login) --}}
-            @if (!auth()->check())
+            @if (!session('is_logged_in'))
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
                         <p>
@@ -19,26 +19,13 @@
                 </div>
             @endif
 
-            @if (auth()->check())
+            @if (session('is_logged_in'))
                 <div class="container mx-auto p-4">
                     
                     <form method="GET" action="{{ url()->current() }}" 
                         class="mb-6 bg-white shadow rounded-2xl p-4 md:p-6">
                         
-                        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                            {{-- Filter Office --}}
-                            <div>
-                                <label for="office_id" class="block text-sm font-medium text-gray-700 mb-1">Office</label>
-                                <select name="office_id" id="office_id"
-                                    class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
-                                    <option value="">Semua Office</option>
-                                    @foreach ($offices as $office)
-                                        <option value="{{ $office->id }}" {{ request('office_id') == $office->id ? 'selected' : '' }}>
-                                            {{ $office->nama }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
                             {{-- Filter Departemen --}}
                             <div>
@@ -62,7 +49,7 @@
                                     <option value="">Semua User</option>
                                     @foreach ($users as $user)
                                         <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                            {{ $user->first_name }} {{ $user->last_name }}
+                                            {{ $user->nama_lengkap}} 
                                         </option>
                                     @endforeach
                                 </select>
@@ -172,18 +159,17 @@
         </div>
     </div>
 
-    @if (auth()->check())
+    @if (session('is_logged_in'))
         @section('script')
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script>
                 $( document ).ready(function() {
-                    $('#departemen_id, #office_id').on('change', function () {
+                    $('#departemen_id').on('change', function () {
                         const departemenId = $('#departemen_id').val();
-                        const officeId = $('#office_id').val();
 
-                        if (!departemenId && !officeId) {
+                        if (!departemenId) {
                             $('#user_id').html(`@foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->first_name }} {{ $user->last_name }}</option>
+                                <option value="{{ $user->id }}">{{ $user->nama_lengkap }}</option>
                             @endforeach`);
                             return;
                         }
@@ -191,16 +177,15 @@
                         $('#user_id').html('<option value="">Loading...</option>').prop('disabled', true);
 
                         $.ajax({
-                            url: '{{ route("users.byOfficeAndDepartemen") }}',
+                            url: '{{ route("users.byDepartemen") }}',
                             type: 'GET',
                             data: {
-                                departemen_id: departemenId,
-                                office_id: officeId
+                                departemen_id: departemenId
                             },
                             success: function (response) {
                                 let options = '<option value="">Semua User</option>';
                                 response.forEach(user => {
-                                    options += `<option value="${user.id}">${user.first_name} ${user.last_name}</option>`;
+                                    options += `<option value="${user.id}">${user.nama_lengkap}</option>`;
                                 });
 
                                 $('#user_id').html(options).prop('disabled', false);
@@ -212,7 +197,6 @@
                     });
 
                     $('#btn-export').on('click', function () {
-                        const officeId = $('#office_id').val();
                         const departemenId = $('#departemen_id').val();
                         const userId = $('#user_id').val();
                         const startDate = $('#start_date').val();
@@ -220,7 +204,6 @@
 
                         // Bangun query string
                         let params = $.param({
-                            office_id: officeId,
                             departemen_id: departemenId,
                             user_id: userId,
                             start_date: startDate,

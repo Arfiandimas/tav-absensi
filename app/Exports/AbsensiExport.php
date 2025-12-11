@@ -15,12 +15,11 @@ class AbsensiExport implements FromArray, WithHeadings, WithEvents
     protected $start, $end, $user_id, $office_id, $departemen_id;
     protected $dates;
 
-    public function __construct($start, $end, $user_id = null, $office_id = null, $departemen_id = null)
+    public function __construct($start, $end, $user_id = null, $departemen_id = null)
     {
         $this->start = $start;
         $this->end = $end;
         $this->user_id = $user_id;
-        $this->office_id = $office_id;
         $this->departemen_id = $departemen_id;
 
         // generate list tanggal
@@ -39,37 +38,35 @@ class AbsensiExport implements FromArray, WithHeadings, WithEvents
     public function array(): array
     {
         $users = User::
-            leftJoin('departemen', 'users.departemen_id', '=', 'departemen.id')
-            ->leftJoin('office', 'users.office_id', '=', 'office.id')
-            ->select('users.id','users.first_name','users.last_name','departemen.nama as departemen')
-            ->when($this->user_id, fn($q)=>$q->where('users.id',$this->user_id))
-            ->when($this->departemen_id, fn($q)=>$q->where('users.departemen_id',$this->departemen_id))
-            ->when($this->office_id, fn($q)=>$q->where('users.office_id',$this->office_id))
-            ->where('office.admin_id', Auth::Id())
+            leftJoin('departemen', 'user.departemen_id', '=', 'departemen.id')
+            ->select('user.id','user.nama_lengkap','departemen.nama as departemen')
+            ->when($this->user_id, fn($q)=>$q->where('user.id',$this->user_id))
+            ->when($this->departemen_id, fn($q)=>$q->where('user.departemen_id',$this->departemen_id))
+            ->whereNotNull('user.departemen_id')
             ->get();
 
         $rows = [];
 
         foreach ($users as $user) {
             $row = [
-                $user->first_name . ' ' . $user->last_name,
+                $user->nama_lengkap,
                 $user->departemen,
             ];
 
             foreach ($this->dates as $tanggal) {
                 $data = DB::table('absensi')
                     ->select(
-                        DB::raw("MIN(CASE WHEN type='Clock In' THEN TIME(waktu) END) as clock_in"),
-                        // DB::raw("MIN(CASE WHEN type='Clock In' AND TIME(waktu) BETWEEN '12:00:00' AND '15:00:00' THEN TIME(waktu) END) as clock_in_siang"),
-                        DB::raw("MIN(CASE WHEN type='Clock Out' THEN TIME(waktu) END) as clock_out")
+                        DB::raw("MIN(CASE WHEN type='Clock In' THEN waktu::time END) AS clock_in"),
+                        // DB::raw("MIN(CASE WHEN type='Clock In' AND waktu::time BETWEEN '12:00:00' AND '15:00:00' THEN waktu::time END) AS clock_in_siang"),
+                        DB::raw("MIN(CASE WHEN type='Clock Out' THEN waktu::time END) AS clock_out")
                     )
                     ->where('user_id',$user->id)
                     ->whereDate('waktu',$tanggal)
                     ->first();
-
-                $row[] = $data->clock_in ? date('H:i', strtotime($data->clock_in)) : '-';
-                // $row[] = $data->clock_in_siang ? date('H:i', strtotime($data->clock_in_siang)) : '-';
-                $row[] = $data->clock_out ? date('H:i', strtotime($data->clock_out)) : '-';
+                        
+                $row[] = $data->clock_in ? substr($data->clock_in, 0, 5) : '-';
+                // $row[] = $data->clock_in_siang ? substr($data->clock_in_siang, 0, 5) : '-';
+                $row[] = $data->clock_out ? substr($data->clock_out, 0, 5) : '-';
             }
 
             $rows[] = $row;

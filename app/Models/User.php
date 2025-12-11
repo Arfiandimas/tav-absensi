@@ -11,46 +11,27 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'departemen_id'
+    protected $table = 'user';
+    protected $guarded = ['id'];
+
+    public const CREATED_AT = 'createdAt';
+    public const UPDATED_AT = 'updatedAt';
+
+    protected $keyType = 'string';     // ID adalah string
+    public $incrementing = false;      // Bukan auto increment
+
+    // Untuk SoftDeletes
+    public const DELETED_AT = 'deletedAt';
+
+    protected $dates = [
+        'createdAt',
+        'updatedAt',
+        'deletedAt'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
-        'password',
-        'remember_token',
+        'password'
     ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
-
-    public function office(): BelongsTo
-    {
-        return $this->belongsTo(Office::class, 'office_id', 'id');
-    }
 }
