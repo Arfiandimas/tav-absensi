@@ -84,8 +84,8 @@
         <div class="pt-4 pb-1 border-t border-gray-200">
         @if (session('is_logged_in'))
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{auth()->user()->name}}</div>
-                <div class="font-medium text-sm text-gray-500">{{ auth()->user()->email }}</div>
+                <div class="font-medium text-base text-gray-800">Admin</div>
+                <div class="font-medium text-sm text-gray-500">{{ env('ADMIN_EMAIL') }}</div>
             </div>
         @endif
 
