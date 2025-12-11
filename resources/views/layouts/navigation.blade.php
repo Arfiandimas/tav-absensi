@@ -23,8 +23,8 @@
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            @if (auth()->check())
-                                <div>{{auth()->user()->name}}</div>
+                            @if (session('is_logged_in'))
+                                <div>Admin</div>
                             @else
                                 <div>{{ __('Guest') }}</div>
                             @endif
@@ -37,7 +37,7 @@
                     </x-slot>
 
                     <x-slot name="content">
-                    @if (auth()->check())
+                    @if (session('is_logged_in'))
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -82,7 +82,7 @@
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
-        @if (auth()->check())
+        @if (session('is_logged_in'))
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800">{{auth()->user()->name}}</div>
                 <div class="font-medium text-sm text-gray-500">{{ auth()->user()->email }}</div>
@@ -90,7 +90,7 @@
         @endif
 
             <div class="mt-3 space-y-1">
-            @if (auth()->check())
+            @if (session('is_logged_in'))
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
