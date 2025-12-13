@@ -7,6 +7,8 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class AbsensiExport implements FromArray, WithHeadings, WithEvents
 {
@@ -99,32 +101,54 @@ class AbsensiExport implements FromArray, WithHeadings, WithEvents
     public function registerEvents(): array
     {
         return [
-            AfterSheet::class => function(AfterSheet $event) {
-                $sheet = $event->sheet->getDelegate();
-                $lastCol = $sheet->getHighestColumn();
+            AfterSheet::class => function (AfterSheet $event) {
 
-                $sheet->mergeCells("A1:{$lastCol}1");
+                $sheet = $event->sheet->getDelegate();
+
+                // kolom terakhir (huruf & index)
+                $highestColumnLetter = $sheet->getHighestColumn();
+                $highestColumnIndex  = Coordinate::columnIndexFromString($highestColumnLetter);
+
+                /* ===============================
+                *  MERGE PERIODE (ROW 1)
+                * =============================== */
+                $sheet->mergeCells("A1:{$highestColumnLetter}1");
                 $sheet->getStyle("A1")->getFont()->setBold(true)->setSize(14);
 
-                $colIndex = 3;
+                /* ===============================
+                *  MERGE TANGGAL (ROW 2)
+                * =============================== */
+                $colIndex = 3; // mulai dari kolom C
                 foreach ($this->dates as $tanggal) {
-                    $start = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex);
-                    $end   = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($colIndex + 1);
+                    $start = Coordinate::stringFromColumnIndex($colIndex);
+                    $end   = Coordinate::stringFromColumnIndex($colIndex + 1);
                     $sheet->mergeCells("{$start}2:{$end}2");
                     $colIndex += 2;
                 }
 
-                $sheet->getStyle("A2:{$sheet->getHighestColumn()}3")->getFont()->setBold(true);
+                /* ===============================
+                *  BOLD HEADING
+                * =============================== */
+                $sheet->getStyle("A2:{$highestColumnLetter}3")
+                    ->getFont()
+                    ->setBold(true);
 
-                foreach(range('A', $sheet->getHighestColumn()) as $col) {
-                    $sheet->getColumnDimension($col)->setAutoSize(true);
+                /* ===============================
+                *  AUTO WIDTH (AMAN > Z)
+                * =============================== */
+                for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
                 }
 
+                /* ===============================
+                *  CENTER ALIGNMENT
+                * =============================== */
                 $sheet->getStyle(
-                    'A2:' . $sheet->getHighestColumn() . $sheet->getHighestRow()
+                    'A2:' . $highestColumnLetter . $sheet->getHighestRow()
                 )->getAlignment()
-                 ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER)
-                 ->setVertical(\PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER);
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER);
             }
         ];
     }
