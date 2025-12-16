@@ -1,4 +1,19 @@
 <x-app-layout>
+    @php
+        $trashIcon = '
+        <div class="w-8 h-8 flex items-center justify-center
+                    rounded-full bg-red-200 hover:bg-red-400
+                    transition">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5 text-red-600"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <path fill-rule="evenodd"
+                    d="M6 8a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm4 0a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm3-5a1 1 0 00-1-1h-4a1 1 0 00-1 1V4H4a1 1 0 100 2h1v10a2 2 0 002 2h6a2 2 0 002-2V6h1a1 1 0 100-2h-3V3z"
+                    clip-rule="evenodd" />
+            </svg>
+        </div>';
+    @endphp
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800">
             {{ __('Data Absensi') }}
@@ -115,18 +130,24 @@
                     </form>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full border border-gray-300 rounded shadow">
+                        <table class="min-w-full border border-gray-300 rounded shadow text-center">
                             <thead class="bg-gray-100">
                                 <tr>
                                     <th class="px-4 py-2 border">#</th>
                                     <th class="px-4 py-2 border">Nama</th>
                                     <th class="px-4 py-2 border">Tanggal</th>
-                                    <th class="px-4 py-2 border">Clock In</th>
-                                    <th class="px-4 py-2 border">Lokasi In</th>
-                                    <th class="px-4 py-2 border">Clock In Siang</th>
-                                    <th class="px-4 py-2 border">Lokasi In Siang</th>
-                                    <th class="px-4 py-2 border">Clock Out</th>
-                                    <th class="px-4 py-2 border">Lokasi Out</th>
+
+                                    <th class="py-2 border" colspan="2">
+                                        Clock In
+                                    </th>
+
+                                    <th class="py-2 border" colspan="2">
+                                        Clock In Siang
+                                    </th>
+
+                                    <th class="py-2 border" colspan="2">
+                                        Clock Out
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -137,30 +158,81 @@
                                         <td class="px-4 py-2 border">{{ $item->tanggal }}</td>
                                         <td class="px-4 py-2 border">{{ $item->clock_in_time ? date('H:i', strtotime($item->clock_in_time)) : '-' }}</td>
                                         <td class="px-4 py-2 border">
-                                            @if($item->clock_in_mlat && $item->clock_in_mlong)
-                                                <a href="https://maps.google.com/?q={{ $item->clock_in_mlat }},{{ $item->clock_in_mlong }}" target="_blank" class="text-blue-600 underline">
-                                                    Lihat Lokasi
-                                                </a>
+                                            @if($item->clock_in_id)
+                                                <form action="{{ route('absensi.destroy', $item->clock_in_id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Hapus Clock In ini?')"
+                                                    class="flex justify-center">
+                                                    @csrf
+                                                    @method('DELETE')
+
+                                                    <button type="submit"
+                                                        class="w-8 h-8 flex items-center justify-center
+                                                            rounded-full bg-pink-100 hover:bg-pink-200 transition">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4 text-red-600"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd"
+                                                                d="M6 8a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm4 0a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm3-5a1 1 0 00-1-1h-4a1 1 0 00-1 1V4H4a1 1 0 100 2h1v10a2 2 0 002 2h6a2 2 0 002-2V6h1a1 1 0 100-2h-3V3z"
+                                                                clip-rule="evenodd"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
                                             @else
                                                 -
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 border">{{ $item->clock_in_siang_time ? date('H:i', strtotime($item->clock_in_siang_time)) : '-' }}</td>
                                         <td class="px-4 py-2 border">
-                                            @if($item->clock_in_siang_mlat && $item->clock_in_siang_mlong)
-                                                <a href="https://maps.google.com/?q={{ $item->clock_in_siang_mlat }},{{ $item->clock_in_siang_mlong }}" target="_blank" class="text-blue-600 underline">
-                                                    Lihat Lokasi
-                                                </a>
+                                            @if($item->clock_in_siang_id)
+                                                <form action="{{ route('absensi.destroy', $item->clock_in_siang_id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Hapus Clock In Siang ini?')"
+                                                    class="flex justify-center">
+                                                    @csrf
+                                                    @method('DELETE')
+
+                                                    <button type="submit"
+                                                        class="w-8 h-8 flex items-center justify-center
+                                                            rounded-full bg-pink-100 hover:bg-pink-200 transition">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4 text-red-600"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd"
+                                                                d="M6 8a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm4 0a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm3-5a1 1 0 00-1-1h-4a1 1 0 00-1 1V4H4a1 1 0 100 2h1v10a2 2 0 002 2h6a2 2 0 002-2V6h1a1 1 0 100-2h-3V3z"
+                                                                clip-rule="evenodd"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
                                             @else
                                                 -
                                             @endif
                                         </td>
                                         <td class="px-4 py-2 border">{{ $item->clock_out_time ? date('H:i', strtotime($item->clock_out_time)) : '-' }}</td>
                                         <td class="px-4 py-2 border">
-                                            @if($item->clock_out_mlat && $item->clock_out_mlong)
-                                                <a href="https://maps.google.com/?q={{ $item->clock_out_mlat }},{{ $item->clock_out_mlong }}" target="_blank" class="text-blue-600 underline">
-                                                    Lihat Lokasi
-                                                </a>
+                                            @if($item->clock_out_id)
+                                                <form action="{{ route('absensi.destroy', $item->clock_out_id) }}"
+                                                    method="POST"
+                                                    onsubmit="return confirm('Hapus Clock Out ini?')"
+                                                    class="flex justify-center">
+                                                    @csrf
+                                                    @method('DELETE')
+
+                                                    <button type="submit"
+                                                        class="w-8 h-8 flex items-center justify-center
+                                                            rounded-full bg-pink-100 hover:bg-pink-200 transition">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                            class="h-4 w-4 text-red-600"
+                                                            fill="currentColor"
+                                                            viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd"
+                                                                d="M6 8a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm4 0a1 1 0 011 1v6a1 1 0 11-2 0V9a1 1 0 011-1zm3-5a1 1 0 00-1-1h-4a1 1 0 00-1 1V4H4a1 1 0 100 2h1v10a2 2 0 002 2h6a2 2 0 002-2V6h1a1 1 0 100-2h-3V3z"
+                                                                clip-rule="evenodd"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
                                             @else
                                                 -
                                             @endif

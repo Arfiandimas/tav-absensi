@@ -52,7 +52,7 @@ class DashboardController extends Controller
         };
 
         $clockIns = DB::table("absensi as a1")
-            ->select("a1.user_id", DB::raw("DATE(a1.waktu) as tanggal"), "a1.waktu as clock_in_time", "a1.mlat as clock_in_mlat", "a1.mlong as clock_in_mlong", "a1.foto as clock_in_foto")
+            ->select("a1.id as clock_in_id", "a1.user_id", DB::raw("DATE(a1.waktu) as tanggal"), "a1.waktu as clock_in_time", "a1.mlat as clock_in_mlat", "a1.mlong as clock_in_mlong", "a1.foto as clock_in_foto")
             ->where("a1.type", "Clock In")
             ->when($request->user_id, function ($query) use ($request) {
                 $query->where("a1.user_id", $request->user_id);
@@ -65,7 +65,7 @@ class DashboardController extends Controller
             ->orderBy("tanggal", "asc");
 
         $clockInsSiang = DB::table("absensi as a2")
-            ->select("a2.user_id", DB::raw("DATE(a2.waktu) as tanggal"), "a2.waktu as clock_in_siang_time", "a2.mlat as clock_in_siang_mlat", "a2.mlong as clock_in_siang_mlong", "a2.foto as clock_in_siang_foto")
+            ->select("a2.id as clock_in_siang_id","a2.user_id", DB::raw("DATE(a2.waktu) as tanggal"), "a2.waktu as clock_in_siang_time", "a2.mlat as clock_in_siang_mlat", "a2.mlong as clock_in_siang_mlong", "a2.foto as clock_in_siang_foto")
             ->where("a2.type", "Clock In")
             ->when($request->user_id, function ($query) use ($request) {
                 $query->where("a2.user_id", $request->user_id);
@@ -85,7 +85,7 @@ class DashboardController extends Controller
             ->orderBy("tanggal", "asc");
 
         $clockOuts = DB::table("absensi as b1")
-            ->select("b1.user_id", DB::raw("DATE(b1.waktu) as tanggal"), "b1.waktu as clock_out_time", "b1.foto as clock_out_foto", "b1.mlat as clock_out_mlat", "b1.mlong as clock_out_mlong")
+            ->select("b1.id as clock_out_id", "b1.user_id", DB::raw("DATE(b1.waktu) as tanggal"), "b1.waktu as clock_out_time", "b1.foto as clock_out_foto", "b1.mlat as clock_out_mlat", "b1.mlong as clock_out_mlong")
             ->where("b1.type", "Clock Out")
             ->when($request->user_id, function ($query) use ($request) {
                 $query->where("b1.user_id", $request->user_id);
@@ -125,24 +125,18 @@ class DashboardController extends Controller
                 "nama_lengkap as full_name",
                 "clock_in.tanggal",
                 "clock_in.clock_in_time",
-                "clock_in.clock_in_mlat",
-                "clock_in.clock_in_mlong",
-                "clock_in.clock_in_foto",
+                "clock_in.clock_in_id",
                 "clock_in_siang.clock_in_siang_time",
-                "clock_in_siang.clock_in_siang_mlat",
-                "clock_in_siang.clock_in_siang_mlong",
-                "clock_in_siang.clock_in_siang_foto",
+                "clock_in_siang.clock_in_siang_id",
                 "clock_out.clock_out_time",
-                "clock_out.clock_out_foto",
-                "clock_out.clock_out_mlat",
-                "clock_out.clock_out_mlong"
+                "clock_out.clock_out_id"
             )
             ->where("user.departemen_id", "!=", null)
-            ->orderBy("user.id", "asc")
-            ->orderBy("clock_in.tanggal", "asc")
+            ->whereNotNull('clock_in.user_id')
+            // ->orderBy("user.id", "asc")
+            ->orderBy("clock_in.tanggal", "desc")
             ->paginate(10)
             ->appends($request->all());
-
         return view("dashboard", compact("results", "start", "end", "departements", "users"));
     }
 
@@ -188,5 +182,15 @@ class DashboardController extends Controller
         return redirect()
             ->back()
             ->with('success', 'Absensi berhasil ditambahkan');
+    }
+
+    public function absensiDestroy($id)
+    {
+        $data = Absensi::whereId($id)->first();
+        if (!$data) return redirect()->back()->with('error', 'Absensi tidak ditemukan');
+        $data->delete();
+        return redirect()
+            ->back()
+            ->with('success', 'Absensi berhasil dihapus');
     }
 }
