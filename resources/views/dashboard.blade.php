@@ -251,101 +251,103 @@
     </div>
 
     {{-- Modal Create --}}
-    <div
-        id="modalTambah"
-        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+    @if (session('is_logged_in'))
+        <div
+            id="modalTambah"
+            class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
 
-        <div class="bg-white w-full max-w-xl rounded-lg p-6">
-            <h2 class="text-lg font-semibold mb-4">Tambah Absensi</h2>
+            <div class="bg-white w-full max-w-xl rounded-lg p-6">
+                <h2 class="text-lg font-semibold mb-4">Tambah Absensi</h2>
 
-            <form method="POST" action="{{ route('absensi.store') }}">
-                @csrf
+                <form method="POST" action="{{ route('absensi.store') }}">
+                    @csrf
 
-                {{-- Departemen --}}
-                <div>
-                    <label for="form_departemen_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Departemen
-                    </label>
-                    <select
-                        name="departemen_id"
-                        id="form_departemen_id"
-                        required
-                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
-                        <option value="">Pilih Departemen</option>
-                        @foreach ($departements as $departemen)
-                            <option value="{{ $departemen->id }}">
-                                {{ $departemen->nama }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    {{-- Departemen --}}
+                    <div>
+                        <label for="form_departemen_id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Departemen
+                        </label>
+                        <select
+                            name="departemen_id"
+                            id="form_departemen_id"
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            <option value="">Pilih Departemen</option>
+                            @foreach ($departements as $departemen)
+                                <option value="{{ $departemen->id }}">
+                                    {{ $departemen->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                {{-- User --}}
-                <div class="mt-3">
-                    <label for="form_user_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        User
-                    </label>
-                    <select
-                        name="user_id"
-                        id="form_user_id"
-                        required
-                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
-                        <option value="">Pilih User</option>
-                        @foreach ($users as $user)
-                            <option value="{{ $user->id }}">
-                                {{ $user->nama_lengkap }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                    {{-- User --}}
+                    <div class="mt-3">
+                        <label for="form_user_id" class="block text-sm font-medium text-gray-700 mb-1">
+                            User
+                        </label>
+                        <select
+                            name="user_id"
+                            id="form_user_id"
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            <option value="">Pilih User</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}">
+                                    {{ $user->nama_lengkap }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                {{-- Type --}}
-                <div class="mt-3">
-                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
-                        Type
-                    </label>
-                    <select
-                        name="type"
-                        id="type"
-                        required
-                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
-                        <option value="">Pilih Type</option>
-                        <option value="Clock In">Clock In</option>
-                        <option value="Clock Out">Clock Out</option>
-                    </select>
-                </div>
+                    {{-- Type --}}
+                    <div class="mt-3">
+                        <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
+                            Type
+                        </label>
+                        <select
+                            name="type"
+                            id="type"
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                            <option value="">Pilih Type</option>
+                            <option value="Clock In">Clock In</option>
+                            <option value="Clock Out">Clock Out</option>
+                        </select>
+                    </div>
 
-                {{-- Tanggal & Jam --}}
-                <div class="mt-3">
-                    <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">
-                        Tanggal & Jam
-                    </label>
-                    <input
-                        type="datetime-local"
-                        name="tanggal"
-                        id="tanggal"
-                        required
-                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
-                </div>
+                    {{-- Tanggal & Jam --}}
+                    <div class="mt-3">
+                        <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">
+                            Tanggal & Jam
+                        </label>
+                        <input
+                            type="datetime-local"
+                            name="tanggal"
+                            id="tanggal"
+                            required
+                            class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                    </div>
 
-                {{-- Buttons --}}
-                <div class="mt-6 flex justify-end gap-2">
-                    <button
-                        type="button"
-                        id="btnClose"
-                        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                        Batal
-                    </button>
+                    {{-- Buttons --}}
+                    <div class="mt-6 flex justify-end gap-2">
+                        <button
+                            type="button"
+                            id="btnClose"
+                            class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                            Batal
+                        </button>
 
-                    <button
-                        type="submit"
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Simpan
-                    </button>
-                </div>
-            </form>
+                        <button
+                            type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                            Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    @endif
 
     @if (session('is_logged_in'))
         @section('script')
