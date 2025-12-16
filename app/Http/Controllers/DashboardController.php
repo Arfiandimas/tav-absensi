@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\AbsensiExport;
+use App\Models\Absensi;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -163,5 +164,29 @@ class DashboardController extends Controller
         $user_id = $request->user_id;
         $departemen_id = $request->departemen_id;
         return Excel::download(new AbsensiExport($start, $end, $user_id, $departemen_id), "absensi".$start." sampai ".$end.".xlsx");
+    }
+
+    public function absensiStore(Request $request) {
+        $validated = $request->validate([
+            'user_id'       => ['required', 'exists:user,id'],
+            'type'       => ['required', 'in:Clock In,Clock Out'],
+            'tanggal'       => ['required', 'date'],
+        ]);
+        
+        // Optional: normalisasi timezone (kalau perlu)
+        $tanggal = Carbon::parse($validated['tanggal']);
+
+        $data = new Absensi();
+        $data->user_id = $request->user_id;
+        $data->type = $request->type;
+        $data->waktu = $tanggal;
+        $data->mlat = "-6.9971806";
+        $data->mlong = "110.4338661";
+        $data->foto = "default.png";
+        $data->save();
+
+        return redirect()
+            ->back()
+            ->with('success', 'Absensi berhasil ditambahkan');
     }
 }

@@ -8,4 +8,6 @@ class Absensi extends Model
 {
     protected $table = 'absensi';
     protected $guarded = ['id'];
+
+    public $timestamps = false;
 }

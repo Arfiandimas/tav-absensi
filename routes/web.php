@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/users/by-departemen', [DashboardController::class, 'getByDepartemen'])->name('users.byDepartemen');
 Route::get('/export-excel', [DashboardController::class, 'exportExcel'])->name('export.excel');
+Route::post('/absensi-store', [DashboardController::class, 'absensiStore'])->name('absensi.store');
 
 Route::get('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/login', [AuthController::class, 'postLogin'])->name('postLogin');

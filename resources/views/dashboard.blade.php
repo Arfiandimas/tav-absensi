@@ -6,6 +6,20 @@
     </x-slot>
 
     <div class="py-2">
+        @if (session('success'))
+            <div class="mb-4 rounded-lg bg-green-100 px-4 py-3 text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if ($errors->any())
+            <div class="mb-4 rounded-lg bg-red-100 px-4 py-3 text-red-700">
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <div class="mx-auto max-w-7xl space-y-10 sm:px-6 lg:px-8">
             
             {{-- Untuk tamu (belum login) --}}
@@ -86,9 +100,14 @@
                                 </a>
                             </div>
 
-                            <div>
+                            <div class="flex gap-3">
+                                <a href="javascript:void(0)"
+                                    id="btnTambah"
+                                    class="px-5 py-[11px] bg-orange-400 text-white rounded-xl shadow hover:bg-orange-700 transition">
+                                    Tambah
+                                </a>
                                 <a href="javascript:void(0)" id="btn-export"
-                                    class="px-5 py-2 bg-green-600 text-white rounded-xl shadow hover:bg-green-700 transition">
+                                    class="px-5 py-[11px] bg-green-600 text-white rounded-xl shadow hover:bg-green-700 transition">
                                     Export
                                 </a>
                             </div>
@@ -159,60 +178,181 @@
         </div>
     </div>
 
+    {{-- Modal Create --}}
+    <div
+        id="modalTambah"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50">
+
+        <div class="bg-white w-full max-w-xl rounded-lg p-6">
+            <h2 class="text-lg font-semibold mb-4">Tambah Absensi</h2>
+
+            <form method="POST" action="{{ route('absensi.store') }}">
+                @csrf
+
+                {{-- Departemen --}}
+                <div>
+                    <label for="form_departemen_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        Departemen
+                    </label>
+                    <select
+                        name="departemen_id"
+                        id="form_departemen_id"
+                        required
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                        <option value="">Pilih Departemen</option>
+                        @foreach ($departements as $departemen)
+                            <option value="{{ $departemen->id }}">
+                                {{ $departemen->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- User --}}
+                <div class="mt-3">
+                    <label for="form_user_id" class="block text-sm font-medium text-gray-700 mb-1">
+                        User
+                    </label>
+                    <select
+                        name="user_id"
+                        id="form_user_id"
+                        required
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                        <option value="">Pilih User</option>
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}">
+                                {{ $user->nama_lengkap }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Type --}}
+                <div class="mt-3">
+                    <label for="type" class="block text-sm font-medium text-gray-700 mb-1">
+                        Type
+                    </label>
+                    <select
+                        name="type"
+                        id="type"
+                        required
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                        <option value="">Pilih Type</option>
+                        <option value="Clock In">Clock In</option>
+                        <option value="Clock Out">Clock Out</option>
+                    </select>
+                </div>
+
+                {{-- Tanggal & Jam --}}
+                <div class="mt-3">
+                    <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">
+                        Tanggal & Jam
+                    </label>
+                    <input
+                        type="datetime-local"
+                        name="tanggal"
+                        id="tanggal"
+                        required
+                        class="w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200">
+                </div>
+
+                {{-- Buttons --}}
+                <div class="mt-6 flex justify-end gap-2">
+                    <button
+                        type="button"
+                        id="btnClose"
+                        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        Batal
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if (session('is_logged_in'))
         @section('script')
             <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
             <script>
-                $( document ).ready(function() {
-                    $('#departemen_id').on('change', function () {
-                        const departemenId = $('#departemen_id').val();
+                $(document).ready(function () {
+                    function handleDepartemenChange(departemenSelector, userSelector) {
+                        $(departemenSelector).on('change', function () {
+                            const departemenId = $(this).val();
 
-                        if (!departemenId) {
-                            $('#user_id').html(`@foreach ($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->nama_lengkap }}</option>
-                            @endforeach`);
-                            return;
-                        }
-
-                        $('#user_id').html('<option value="">Loading...</option>').prop('disabled', true);
-
-                        $.ajax({
-                            url: '{{ route("users.byDepartemen") }}',
-                            type: 'GET',
-                            data: {
-                                departemen_id: departemenId
-                            },
-                            success: function (response) {
-                                let options = '<option value="">Semua User</option>';
-                                response.forEach(user => {
-                                    options += `<option value="${user.id}">${user.nama_lengkap}</option>`;
-                                });
-
-                                $('#user_id').html(options).prop('disabled', false);
-                            },
-                            error: function () {
-                                $('#user_id').html('<option value="">Error memuat user</option>').prop('disabled', true);
+                            if (!departemenId) {
+                                $(userSelector).html(`
+                                    @foreach ($users as $user)
+                                        <option value="{{ $user->id }}">{{ $user->nama_lengkap }}</option>
+                                    @endforeach
+                                `).prop('disabled', false);
+                                return;
                             }
-                        });
-                    });
 
+                            $(userSelector)
+                                .html('<option value="">Loading...</option>')
+                                .prop('disabled', true);
+
+                            $.ajax({
+                                url: '{{ route("users.byDepartemen") }}',
+                                type: 'GET',
+                                data: { departemen_id: departemenId },
+                                success: function (response) {
+                                    let options = '<option value="">Semua User</option>';
+                                    if (departemenSelector == '#form_departemen_id' || userSelector == 'form_user_id') {
+                                        options = '<option value="">Pilih User</option>';
+                                    }
+                                    
+
+                                    response.forEach(user => {
+                                        options += `<option value="${user.id}">${user.nama_lengkap}</option>`;
+                                    });
+
+                                    $(userSelector)
+                                        .html(options)
+                                        .prop('disabled', false);
+                                },
+                                error: function () {
+                                    $(userSelector)
+                                        .html('<option value="">Error memuat user</option>')
+                                        .prop('disabled', true);
+                                }
+                            });
+                        });
+                    }
+
+                    handleDepartemenChange('#departemen_id', '#user_id');
+                    handleDepartemenChange('#form_departemen_id', '#form_user_id');
+
+                    // Export tetap sama
                     $('#btn-export').on('click', function () {
-                        const departemenId = $('#departemen_id').val();
-                        const userId = $('#user_id').val();
-                        const startDate = $('#start_date').val();
-                        const endDate = $('#end_date').val();
-
-                        // Bangun query string
-                        let params = $.param({
-                            departemen_id: departemenId,
-                            user_id: userId,
-                            start_date: startDate,
-                            end_date: endDate
+                        const params = $.param({
+                            departemen_id: $('#departemen_id').val(),
+                            user_id: $('#user_id').val(),
+                            start_date: $('#start_date').val(),
+                            end_date: $('#end_date').val()
                         });
 
-                        // Redirect ke URL export dengan query string
-                        window.location.href = '{{ route("export.excel") }}' + '?' + params;
+                        window.location.href = '{{ route("export.excel") }}?' + params;
                     });
+
+                });
+
+                // HANDLE MODAL
+                const modal = document.getElementById('modalTambah');
+                const btnTambah = document.getElementById('btnTambah');
+                const btnClose = document.getElementById('btnClose');
+                btnTambah.addEventListener('click', () => {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                });
+                btnClose.addEventListener('click', () => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
                 });
             </script>
         @endsection
